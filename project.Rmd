@@ -2,7 +2,9 @@
 title: 'Practical Machine Learning: Course Project'
 author: "Benjamin Chan"
 date: "August 11, 2018"
-output: html_document
+output:
+  html_document:
+    keep_md: yes
 editor_options: 
   chunk_output_type: console
 ---
@@ -77,7 +79,7 @@ accuracy_train_CT <- conf_train_CT$overall[1]
 accuracy_train_CT
 ```
 
-The accuracy is `r round(accuracy_train_CT, 3)` and hence the out of sample error is `r round(accuracy_train_CT, 3)` using classification tree.
+The accuracy is `r round(accuracy_train_CT, 3)*100`% and hence the out of sample error is `r round(accuracy_train_CT, 3)*100`% using classification tree.
 
 ### Use random forests
 ```{r, cache = TRUE}
@@ -90,7 +92,7 @@ accuracy_train_RF <- conf_train_RF$overall[1]
 accuracy_train_RF
 ```
 
-The accuracy is `r round(accuracy_train_RF, 3)` and hence the out of sample error is `r round(accuracy_train_RF, 3)` using random forests.
+The accuracy is `r round(accuracy_train_RF, 3)*100`% and hence the out of sample error is `r round(accuracy_train_RF, 3)*100`% using random forests.
 
 ### Use gradient boosting
 ```{r, cache = TRUE}
@@ -103,11 +105,11 @@ accuracy_train_GBM <- conf_train_GBM$overall[1]
 accuracy_train_GBM
 ```
 
-The accuracy is `r round(accuracy_train_GBM, 3)` and hence the out of sample error is `r round(accuracy_train_GBM, 3)` using random forests.
+The accuracy is `r round(accuracy_train_GBM, 3)*100`% and hence the out of sample error is `r round(accuracy_train_GBM, 3)*100`% using random forests.
 
 ## Conclusion
-In this application, random forests model gives the highest accuracy.
+In this application, random forests model gives the highest accuracy. Finally use random forests to predict the testing data.
 ```{r, cache = TRUE}
 predict_test <- predict(model_RF, testclean)
-head(predict_test, 20)
+predict_test
 ```
