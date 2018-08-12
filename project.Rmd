@@ -1,0 +1,113 @@
+---
+title: 'Practical Machine Learning: Course Project'
+author: "Benjamin Chan"
+date: "August 11, 2018"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Background
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://web.archive.org/web/20161224072740/http:/groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Packages
+```{r, warning = FALSE, message = FALSE}
+library(caret)
+library(rattle)
+```
+
+## Load data
+```{r, cache = TRUE}
+trainUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+
+trainData <- read.csv(trainUrl, na.strings = c("NA", "#DIV/0!", ""))
+testData <- read.csv(testUrl, na.strings = c("NA", "#DIV/0!", ""))
+
+dim(trainData)
+dim(testData)
+```
+
+The raw training data have `r nrow(trainData)` rows and `r ncol(trainData)` columns while the raw testing data have `r nrow(testData)` rows and `r ncol(testData)` columns.
+
+## Clean data
+Remove the first 7 variables, which are not useful for prediction. Also remove variables with more than 90% NA.
+```{r, cache = TRUE}
+trainclean <- trainData[, -c(1:7)]
+testclean <- testData[, -c(1:7)]
+
+selectcol <- colMeans(is.na(trainclean))<0.9
+trainclean = trainclean[, selectcol]
+testclean = testclean[, selectcol]
+
+dim(trainclean)
+dim(testclean)
+```
+
+The clean training data have `r ncol(trainclean)` columns while the clean testing data have `r ncol(testclean)` columns.
+
+## Split data
+To estimate out of sample error, we split clean training data into 2 portions. Set seed to ensure reproducibility.
+```{r, cache = TRUE}
+set.seed(12345)
+inTrain <- createDataPartition(trainclean$classe, p = 0.7, list = F)
+trainclean1 <- trainclean[inTrain, ]
+trainclean2 <- trainclean[-inTrain, ]
+
+dim(trainclean1)
+dim(trainclean2)
+```
+
+## Build models
+Use 5-fold cross validation for training.
+
+### Use classification tree
+```{r, cache = TRUE, warning = FALSE}
+trControl <- trainControl(method = "cv", number = 5)
+model_CT <- train(classe~., data = trainclean1, method = "rpart", trControl = trControl)
+fancyRpartPlot(model_CT$finalModel)
+
+predict_train_CT <- predict(model_CT, trainclean2)
+conf_train_CT <- confusionMatrix(trainclean2$classe, predict_train_CT)
+accuracy_train_CT <- conf_train_CT$overall[1]
+accuracy_train_CT
+```
+
+The accuracy is `r round(accuracy_train_CT, 3)` and hence the out of sample error is `r round(accuracy_train_CT, 3)` using classification tree.
+
+### Use random forests
+```{r, cache = TRUE}
+model_RF <- train(classe~., data = trainclean1, method = "rf", trControl = trControl)
+print(model_RF)
+
+predict_train_RF <- predict(model_RF, trainclean2)
+conf_train_RF <- confusionMatrix(trainclean2$classe, predict_train_RF)
+accuracy_train_RF <- conf_train_RF$overall[1]
+accuracy_train_RF
+```
+
+The accuracy is `r round(accuracy_train_RF, 3)` and hence the out of sample error is `r round(accuracy_train_RF, 3)` using random forests.
+
+### Use gradient boosting
+```{r, cache = TRUE}
+model_GBM <- train(classe~., data = trainclean1, method = "gbm", trControl = trControl, verbose = FALSE)
+print(model_GBM)
+
+predict_train_GBM <- predict(model_GBM, trainclean2)
+conf_train_GBM <- confusionMatrix(trainclean2$classe, predict_train_GBM)
+accuracy_train_GBM <- conf_train_GBM$overall[1]
+accuracy_train_GBM
+```
+
+The accuracy is `r round(accuracy_train_GBM, 3)` and hence the out of sample error is `r round(accuracy_train_GBM, 3)` using random forests.
+
+## Conclusion
+In this application, random forests model gives the highest accuracy.
+```{r, cache = TRUE}
+predict_test <- predict(model_RF, testclean)
+head(predict_test, 20)
+```
